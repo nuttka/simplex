@@ -44,7 +44,7 @@ class Simplex:
     def find_row_to_pivot(tableau, column_to_pivot, number_restrictions):
         index = -1
 
-        for i in range(1, number_restrictions):
+        for i in range(1, number_restrictions + 1):
             if tableau[i][column_to_pivot] <= 0:
                 continue
             elif index == -1:
@@ -54,6 +54,49 @@ class Simplex:
 
         return index
 
+    def pivot(tableau, pivot_index):
+        for i in range(0, tableau.shape[0]):
+            for j in range(0, tableau.shape[1]):
+                if i != pivot_index[0] and j != pivot_index[1]:
+                    tableau[i][j] -= tableau[pivot_index[0]][j] * tableau[i][pivot_index[1]] / tableau[pivot_index[0]][pivot_index[1]]
+
+        for i in range(0, tableau.shape[0]):
+            if i != pivot_index[0]:
+                tableau[i][pivot_index[1]] = 0.0
+        
+        for i in range(0, tableau.shape[1]):
+            if i != pivot_index[1]:
+                tableau[pivot_index[0]][i] /= tableau[pivot_index[0]][pivot_index[1]]
+        
+        tableau[pivot_index[0]][pivot_index[1]] = 1.0
+        return tableau
+
+    def get_certificate(tableau, number_restrictions):
+        return tableau[0][0:number_restrictions]
+
+    def get_optimal_value(tableau):
+        return tableau[0][tableau.shape[1]-1]
+
+    def get_solution(tableau, number_restrictions):
+        sol = []
+        for i in range(1, number_restrictions+1):
+            sol.append(tableau[i][tableau.shape[1]-1])
+        return sol
+    
+    def interpret_result(tableau, number_restrictions):
+        optimal = 1
+        for i in range(number_restrictions, tableau.shape[1]):
+            if tableau[0][i] < 0:
+                optimal = -1
+
+        if optimal:
+            certificate = Simplex.get_certificate(tableau, number_restrictions)
+            optimal_value = Simplex.get_optimal_value(tableau)
+            solution = Simplex.get_solution(tableau, number_restrictions)
+            print("otima")
+            print(optimal_value)
+            print(solution)
+            print(certificate)
 
     def solve(tableau, number_restrictions):
         iteration = 0
@@ -67,15 +110,14 @@ class Simplex:
             if column_to_pivot == -1:
                 break;
 
-            row_of_element_pivot = Simplex.find_row_to_pivot(tableau, column_to_pivot, number_restrictions)
-            if row_of_element_pivot == -1:
+            row_to_pivot = Simplex.find_row_to_pivot(tableau, column_to_pivot, number_restrictions)
+            if row_to_pivot == -1:
                 break;
 
-            element_pivot_indexes = (row_of_element_pivot, column_to_pivot)
+            pivot_index = (row_to_pivot, column_to_pivot)
 
-            # pivot(tableau, element_pivot_indexes)
+            tableau = Simplex.pivot(tableau, pivot_index)
 
         print('>> Término:')
         print('Tableau: \n', tableau)
-
-        # analyzeTableau(tableau, number_restrictions)
+        Simplex.interpret_result(tableau, number_restrictions)
