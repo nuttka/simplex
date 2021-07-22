@@ -98,7 +98,18 @@ class Simplex:
             print(solution)
             print(certificate)
 
+    def verify_negative_b(tableau, number_restrictions):
+        for i in range(1, number_restrictions):
+            if(tableau[i][tableau.shape[1]-1] < 0):
+                tableau[i][number_restrictions:tableau.shape[1]] = tableau[i][number_restrictions:tableau.shape[1]] * (-1)
+
+        print(tableau)
+        return tableau
+
+
     def solve(tableau, number_restrictions):
+        tableau = Simplex.verify_negative_b(tableau, number_restrictions)
+
         iteration = 0
         while 1:
             iteration += 1
