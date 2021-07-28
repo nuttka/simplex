@@ -99,7 +99,7 @@ class Simplex:
             print(certificate)
 
     def verify_negative_b(tableau, number_restrictions):
-        for i in range(1, number_restrictions):
+        for i in range(1, number_restrictions + 1):
             if(tableau[i][tableau.shape[1]-1] < 0):
                 tableau[i][number_restrictions:tableau.shape[1]] = tableau[i][number_restrictions:tableau.shape[1]] * (-1)
 
@@ -107,8 +107,54 @@ class Simplex:
         return tableau
 
 
-    def solve(tableau, number_restrictions):
+    def get_pl_aux(tableau, number_restrictions):
+        for i in range(number_restrictions, tableau.shape[1]):
+            tableau[0][i] = 0;
+
+        aux_identity = np.identity(number_restrictions, dtype=np.float)
+        aux_top = np.full((number_restrictions), 1)
+        aux = np.vstack([aux_top, aux_identity])
+
+        tableau_last_column = tableau[:, [-1]]
+        tableau_without_last_column = tableau[:, :-1] 
+        
+        tableau_aux = np.concatenate((tableau_without_last_column, aux), axis=1)
+        tableau_aux = np.concatenate((tableau_aux, tableau_last_column), axis=1)
+
+        for i in range(1, tableau.shape[0]):
+            # print(tableau_aux[0, :])
+            # print(tableau_aux[i, :])
+            # quit()
+            tableau_aux[0, :] -= tableau_aux[i, :]
+            
+
+        return tableau_aux;
+
+    def optimal_aux(tableau, number_restrictions, c_array):
+        
+
+    def interpret_result_auxiliar(tableau, number_restrictions, c_array):
+        optmal_value = Simplex.get_optimal_value(tableau)
+        tipo = "indefinido"
+        if(optmal_value < 0):
+            tipo = "inviavel"
+            certificate = Simplex.get_certificate(tableau, number_restrictions)
+            return tipo, certificate, tableau
+        if(optmal_value == 0):
+            tipo = "otimo"
+            first_part = tableau[:, 0:tableau.shape[1] - number_restrictions]
+            last_column = tableau[:, [-1]]
+            tableau = np.concatenate((first_part, last_column), axis=1)
+            tableau = Simplex.optimal_aux(tableau, number_restrictions, c_array)
+            return tipo, "", tableau
+        return tipo, "", tableau
+
+
+    def solve(tableau, number_restrictions, c_array):
         tableau = Simplex.verify_negative_b(tableau, number_restrictions)
+
+        tableau = Simplex.get_pl_aux(tableau, number_restrictions)
+        
 
         iteration = 0
         while 1:
@@ -119,10 +165,40 @@ class Simplex:
 
             column_to_pivot = Simplex.find_column_to_pivot(tableau, number_restrictions)
             if column_to_pivot == -1:
+                print("SAIU DO WHILE PQ NAO TEM COLUNAAAA")
                 break;
 
             row_to_pivot = Simplex.find_row_to_pivot(tableau, column_to_pivot, number_restrictions)
             if row_to_pivot == -1:
+                print("SAIU DO WHILE PQ NAO TEM LINHAAAA")
+                break;
+
+            pivot_index = (row_to_pivot, column_to_pivot)
+
+            tableau = Simplex.pivot(tableau, pivot_index)
+        
+        tipo, certificado, tableau = Simplex.interpret_result_auxiliar(tableau, number_restrictions, c_array)
+        if(tipo == "inviavel"):
+            print(tipo)
+            print(certificado)
+            quit()
+
+
+        iteration = 0
+        while 1:
+            iteration += 1
+
+            print('>> Iteration: ', iteration);
+            print('Tableau: \n', tableau)
+
+            column_to_pivot = Simplex.find_column_to_pivot(tableau, number_restrictions)
+            if column_to_pivot == -1:
+                print("SAIU DO WHILE PQ NAO TEM COLUNAAAA")
+                break;
+
+            row_to_pivot = Simplex.find_row_to_pivot(tableau, column_to_pivot, number_restrictions)
+            if row_to_pivot == -1:
+                print("SAIU DO WHILE PQ NAO TEM LINHAAAA")
                 break;
 
             pivot_index = (row_to_pivot, column_to_pivot)
