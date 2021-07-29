@@ -39,14 +39,15 @@ class Simplex:
 
         self.tableau = np.concatenate((vero, tableau), axis=1)
 
-        print(self.tableau)
+        # print(">> Tableau pós FPI")
+        # print(self.tableau)
 
 
 
 
     def find_column_to_pivot(self):
         for i in range(self.number_restrictions_initial, self.tableau.shape[1] - 1):
-            if self.tableau[0][i] < 0:
+            if self.tableau[0][i].round(10) < 0:
                 return i
         
         return -1
@@ -87,7 +88,7 @@ class Simplex:
 
 
     def get_certificate(self):
-        return self.tableau[0][0:self.number_restrictions_initial]
+        return self.tableau[0][0:self.number_restrictions_initial].round(10)
 
 
 
@@ -114,30 +115,32 @@ class Simplex:
 
 
     def interpret_result(self):
-        optimal = 1
-        for i in range(self.number_restrictions_initial, self.tableau.shape[1]):
-            if self.tableau[0][i] < 0:
-                optimal = -1
+        # optimal = 1
+        # for i in range(self.number_restrictions_initial, self.tableau.shape[1]):
+        #     if self.tableau[0][i] < 0:
+        #         optimal = -1
 
-        if optimal:
-            certificate = Simplex.get_certificate(self)
-            optimal_value = Simplex.get_optimal_value(self)
-            solution = Simplex.get_solution(self)
-            print("otima")
-            print(optimal_value)
-            print(solution)
-            print(certificate)
+        # if optimal:
+        certificate = Simplex.get_certificate(self)
+        optimal_value = Simplex.get_optimal_value(self)
+        solution = Simplex.get_solution(self)
+        print("otimo")
+        print(optimal_value)
+        print(' '.join(str(round(value, 7)) for value in solution))
+        print(' '.join(str(round(value, 7)) for value in certificate))
 
 
 
 
     def verify_negative_b(self):
+        b_negativo = False
         for i in range(1, self.number_restrictions_initial + 1):
             if(self.tableau[i][self.tableau.shape[1]-1] < 0):
+                b_negativo = True
                 self.tableau[i][0:self.tableau.shape[1]] = self.tableau[i][0:self.tableau.shape[1]] * (-1)
 
 
-
+        return b_negativo
 
 
     def get_pl_aux(self):
@@ -156,7 +159,9 @@ class Simplex:
 
         for i in range(1, self.tableau.shape[0]):
             self.tableau[0, :] -= self.tableau[i, :]
-
+        
+        # print(">> Tableau aux")
+        # print(self.tableau)
 
 
 
@@ -164,11 +169,11 @@ class Simplex:
         self.optmal_value_aux = Simplex.get_optimal_value(self)
         self.tipo = "indefinido"
 
-        if(self.optmal_value_aux < 0):
+        if(self.optmal_value_aux.round(10) < 0):
             self.tipo = "inviavel"
             self.certificado = Simplex.get_certificate(self)
 
-        if(self.optmal_value_aux == 0):
+        if(self.optmal_value_aux.round(10) == 0):
             self.tipo = "otimo"
 
 
@@ -181,26 +186,72 @@ class Simplex:
         for i in range(self.number_restrictions_initial+len(self.c_array_fpi), self.tableau.shape[1] - 1):
             self.tableau = np.delete(self.tableau, self.number_restrictions_initial+len(self.c_array_fpi), 1)
 
+        for i in range(0, self.number_restrictions_initial):
+            self.tableau[0][i] = 0
+
+
+    def find_bases(self):
+        basesIndex = []
+
+        for i in range(self.number_restrictions_initial, self.tableau.shape[1] - self.number_restrictions_initial):
+            # print("essa merda")
+            # print(self.tableau[0][i])
+            if self.tableau[0][i] == 0:
+                index = np.where(self.tableau[:, i] == 1)
+                index_ = np.where(self.tableau[:, i] == 0)
+                # print("index")
+                # print(index)
+                if len(index[0]) == 1 and len(index_[0] == len(self.tableau[:, i]) - 1):
+                    basesIndex.append(i)
+
+        return basesIndex
+
+    def return_unlimited(self, column):
+
+        solucao = Simplex.get_solution(self)
+
+        cert = np.zeros(self.tableau.shape[1])
+
+        cert[column - self.number_restrictions_initial] = 1
+        findBasesColumns = Simplex.find_bases(self)
+
+        for base in findBasesColumns:
+            for i in range(1, self.tableau.shape[0]):
+                if self.tableau[i][base] == 1:
+                    cert[base - self.number_restrictions_initial] = self.tableau[i][column] * (-1)
+
+        cert = cert[:self.number_variables_initial]
+        
+
+        print('ilimitada')
+        print(' '.join(str(round(value, 7)) for value in solucao))
+        print(' '.join(str(round(value, 7)) for value in cert))
+        quit()
+
+
 
     def pivoting(self):
         iteration = 0
         while 1:
             iteration += 1
 
-            print('>> Iteration: ', iteration);
-            print('Tableau: \n', self.tableau)
+            # print('>> Iteration: ', iteration);
+            # print('Tableau: \n', np.around(self.tableau, 2))
+            # print('Tableau: \n', self.tableau)
 
             column_to_pivot = Simplex.find_column_to_pivot(self)
             if column_to_pivot == -1:
-                print("SAIU DO WHILE PQ NAO TEM COLUNAAAA")
+                # print("SAIU DO WHILE PQ NAO TEM COLUNAAAA")
                 break;
 
             row_to_pivot = Simplex.find_row_to_pivot(self, column_to_pivot)
             if row_to_pivot == -1:
-                print("SAIU DO WHILE PQ NAO TEM LINHAAAA")
-                break;
+                Simplex.return_unlimited(self, column_to_pivot)
+                # break;
 
             pivot_index = (row_to_pivot, column_to_pivot)
+
+            # print(">> PIVOTEANDO: ", pivot_index)
 
             Simplex.pivot(self, pivot_index)
 
@@ -211,22 +262,27 @@ class Simplex:
         
         Simplex.pivoting(self)
 
-        print('>> Término:')
-        print('Tableau: \n', self.tableau)
+        # print('>> Término:')
+        # print('Tableau: \n', self.tableau)
         Simplex.interpret_result(self)
 
 
     def solve(self):
-        Simplex.verify_negative_b(self)
-        Simplex.get_pl_aux(self)
-        Simplex.pivoting(self)
-        Simplex.interpret_result_auxiliar(self)
+        b_negativo = Simplex.verify_negative_b(self)
+        # Simplex.return_unlimited(self)
+        if b_negativo:
+            Simplex.get_pl_aux(self)
+            Simplex.pivoting(self)
+            Simplex.interpret_result_auxiliar(self)
 
-        if(self.tipo == "inviavel"):
-            print(self.tipo)
-            print(self.certificado)
-            quit()
+            if(self.tipo == "inviavel"):
+                print(self.tipo)
+                print(' '.join(str(round(value, 7)) for value in self.certificado))
+                quit()
 
-        if(self.tipo == "otimo"):
-            print(self.tipo)
-            Simplex.solve_optimal_pl(self)
+            if(self.tipo == "otimo"):
+                # print(self.tipo)
+                Simplex.solve_optimal_pl(self)
+        else:
+            Simplex.pivoting(self)
+            Simplex.interpret_result(self)
