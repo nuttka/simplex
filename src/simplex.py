@@ -84,7 +84,7 @@ class Simplex:
 
 
     def get_certificate(self):
-        return self.tableau[0][0:self.number_restrictions_initial].round(7)
+        return self.tableau[0][0:self.number_restrictions_initial].round(10)
 
 
 
@@ -114,8 +114,8 @@ class Simplex:
         certificate = Simplex.get_certificate(self)
         optimal_value = Simplex.get_optimal_value(self)
         solution = Simplex.get_solution(self)
-        print("otimo")
-        print(optimal_value)
+        print("otima")
+        print(optimal_value.round(7))
         print(' '.join(str(round(value, 7)) for value in solution))
         print(' '.join(str(round(value, 7)) for value in certificate))
 
@@ -156,11 +156,11 @@ class Simplex:
         self.optmal_value_aux = Simplex.get_optimal_value(self)
         self.tipo = "indefinido"
 
-        if(self.optmal_value_aux.round(7) < 0):
+        if(self.optmal_value_aux.round(10) < 0):
             self.tipo = "inviavel"
             self.certificado = Simplex.get_certificate(self)
 
-        if(self.optmal_value_aux.round(7) == 0):
+        if(self.optmal_value_aux.round(10) == 0):
             self.tipo = "otimo"
 
 
@@ -181,7 +181,6 @@ class Simplex:
         basesIndex = []
 
         for i in range(self.number_restrictions_initial, self.tableau.shape[1] - self.number_restrictions_initial):
-            print(self.tableau[0][i])
             if self.tableau[0][i] == 0:
                 index = np.where(self.tableau[:, i] == 1)
                 index_ = np.where(self.tableau[:, i] == 0)
@@ -191,7 +190,7 @@ class Simplex:
         return basesIndex
 
     def return_unlimited(self, column):
-        print("===============================")
+
         solucao = Simplex.get_solution(self)
 
         cert = np.zeros(self.tableau.shape[1])
@@ -219,9 +218,6 @@ class Simplex:
         while 1:
             iteration += 1
 
-            print("PIVOTING .. IT ", iteration)
-            print(self.tableau)
-
             column_to_pivot = Simplex.find_column_to_pivot(self)
             if column_to_pivot == -1:
                 break;
@@ -231,7 +227,6 @@ class Simplex:
                 Simplex.return_unlimited(self, column_to_pivot)
 
             pivot_index = (row_to_pivot, column_to_pivot)
-            print("Index ", pivot_index)
 
             Simplex.pivot(self, pivot_index)
 
@@ -258,7 +253,6 @@ class Simplex:
                 quit()
 
             if(self.tipo == "otimo"):
-                # print(self.tipo)
                 Simplex.solve_optimal_pl(self)
         else:
             Simplex.pivoting(self)
